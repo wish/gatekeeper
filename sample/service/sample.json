@@ -1,0 +1,122 @@
+---
+{
+   "apiVersion": "extensions/v1beta1",
+   "kind": "Deployment",
+   "metadata": {
+      "labels": {
+         "app": "service"
+      },
+      "name": "service",
+      "namespace": "service"
+   },
+   "spec": {
+      "replicas": 25,
+      "selector": {
+         "matchLabels": {
+            "app": "service"
+         }
+      },
+      "template": {
+         "metadata": {
+            "labels": {
+               "app": "service"
+            }
+         },
+         "spec": {
+            "containers": [
+               {
+                  "args": [
+                     "-flag",
+                     "-flag2",
+                     "arg"
+                  ],
+                  "command": [
+                     "/bin/cmdA"
+                  ],
+                  "env": [
+                     {
+                        "name": "POD_NAME",
+                        "valueFrom": {
+                           "fieldRef": {
+                              "fieldPath": "metadata.name"
+                           }
+                        }
+                     }
+                  ],
+                  "image": "containerA:0.1.1",
+                  "name": "containerA",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/etc/containerA/secrets",
+                        "name": "containerA-key",
+                        "readOnly": true
+                     },
+                     {
+                        "mountPath": "/etc/containerA/config",
+                        "name": "containerA-config",
+                        "readOnly": true
+                     }
+                  ]
+               },
+               {
+                  "args": [
+                    "-flag",
+                    "arg",
+                    "arg2"
+                  ],
+                  "command": [
+                     "/bin/cmdB"
+                  ],
+                  "image": "containerB:0.9.9",
+                  "name": "containerB",
+                  "ports": [
+                     {
+                        "containerPort": 123
+                     },
+                     {
+                        "containerPort": 444
+                     }
+                  ],
+                  "resources": {
+                     "limits": {
+                        "memory": "16Gi"
+                     },
+                     "requests": {
+                        "memory": "8Gi"
+                     }
+                  },
+                  "terminationMessagePolicy": "FallbackToLogsOnError"
+               }
+            ],
+            "dnsPolicy": "Default",
+            "nodeSelector": {
+               "kops.k8s.io/instancegroup": "service"
+            },
+            "terminationGracePeriodSeconds": 55,
+            "volumes": [
+               {
+                  "name": "containerB-key",
+                  "secret": {
+                     "secretName": "containerB-key"
+                  }
+               },
+               {
+                  "configMap": {
+                     "name": "service-containerB-config"
+                  },
+                  "name": "containerB-config"
+               }
+            ]
+         }
+      }
+   }
+}
+---
+{
+   "apiVersion": "v1",
+   "kind": "ConfigMap",
+   "metadata": {
+      "name": "service-containerB-config",
+      "namespace": "service"
+   }
+}
