@@ -5,7 +5,7 @@
       kind: "Deployment",
       ruleTree: {
         spec: {
-          replicas: LT(24),
+          replicas: GT(0)
         },
       },
     },
