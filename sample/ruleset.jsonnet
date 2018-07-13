@@ -5,7 +5,19 @@
       kind: "Deployment",
       ruleTree: {
         spec: {
-          replicas: LT(24),
+          replicas: AND(GT(2), LT(25))
+        },
+      },
+    },
+    {
+      regex: ".*namespace.json",
+      kind: "Namespace",
+      ruleTree: {
+        metadata: {
+          labels: {
+            name: AND(TAG("namespace"), PATH(1))
+          },
+          name: TAG("namespace")
         },
       },
     },

@@ -1,6 +1,7 @@
 package verifier
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,17 +10,20 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 
 	"github.com/wish/gatekeeper/parser"
 )
 
+var tagMap map[string]string
+
 // Verify verifies the given folder of Kubernetes files, then returns the errors encountered
 func Verify(ruleSet RuleSet, base string) []error {
 	errs := []error{}
+	tagMap = make(map[string]string)
 
 	err := filepath.Walk(base, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -58,8 +62,11 @@ func verifyFileWithRule(path string, rule Rule) []error {
 
 	resources, errs := parseFile(path)
 
+	//Parse path variables
+	pathVars := strings.Split(path, "/")
+
 	// Traverse the rules tree and verify file tree on each node
-	errs = append(errs, verifyResources(rule, resources, path)...)
+	errs = append(errs, verifyResources(rule, resources, pathVars)...)
 
 	return errs
 }
@@ -89,107 +96,200 @@ func parseFile(path string) ([]map[string]interface{}, []error) {
 }
 
 // Verifies a list of resources with a rule tree
-func verifyResources(rule Rule, resources []map[string]interface{}, path string) []error {
+func verifyResources(rule Rule, resources []map[string]interface{}, pathVars []string) []error {
 	errs := []error{}
 
 	for _, resource := range resources {
 		if _, ok := resource["kind"]; !ok {
-			errs = append(errs, fmt.Errorf("Resource in %v does not have 'kind' field", path))
+			errs = append(errs, fmt.Errorf("Resource in %v does not have 'kind' field", strings.Join(pathVars, "/")))
 			continue
 		}
+
 		if rule.Kind == resource["kind"] {
-			errs = append(errs, verifyResourcesTraverseHelper(rule.RuleTree, resource)...)
+			errs = append(errs, verifyResourcesTraverseHelper(rule.RuleTree, resource, pathVars, "")...)
 		}
 	}
 
 	return errs
 }
 
-func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}) []error {
+func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}, pathVars []string, parentKey string) []error {
 	errs := []error{}
 	for k, v := range ruleTree {
-		switch t := v.(type) {
-		case map[string]interface{}:
-			if _, ok := resourceTree[k]; !ok {
-				errs = append(errs, fmt.Errorf("Resource does not contain key %v", k))
-				continue
-			}
+		// Check resource tree has key
+		if _, ok := resourceTree[k]; !ok {
+			errs = append(errs, fmt.Errorf("Resource does not contain key %v", k))
+			continue
+		}
+		key := k
+		if parentKey != "" {
+			key = parentKey + "." + k
+		}
 
+		switch t := v.(type) {
+		case []interface{}:
+			// TODO: arrays???
+		case map[string]interface{}:
 			if _, ok := t["gatekeeper"]; ok {
-				switch t["operation"] {
-				case "<":
-					val, err := interfaceToFloat(t["value"])
-					if err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					resourceVal, err := interfaceToFloat(resourceTree[k])
-					if err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					if resourceVal >= val {
-						errs = append(errs, fmt.Errorf("Broken < rule at key %v: %v >= %v", k, resourceVal, val))
-					}
-				case ">":
-					val, err := interfaceToFloat(t["value"])
-					if err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					resourceVal, err := interfaceToFloat(resourceTree[k])
-					if err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					if resourceVal <= val {
-						errs = append(errs, fmt.Errorf("Broken > rule at key %v: %v <= %v", k, resourceVal, val))
-					}
-				case "=":
-					val := fmt.Sprintf("%v", t["value"])
-					resourceVal := fmt.Sprintf("%v", resourceTree[k])
-					if resourceVal != val {
-						errs = append(errs, fmt.Errorf("Broken = rule at key %v: %v != %v", k, resourceVal, val))
-					}
-				default:
-					errs = append(errs, fmt.Errorf("Unknown gatekeeper operation encountered: %v", t["operation"]))
-				}
+				errs = append(errs, applyRule(t, key, resourceTree[k], pathVars)...)
 			} else {
 				switch r := resourceTree[k].(type) {
 				case map[string]interface{}:
-					errs = append(errs, verifyResourcesTraverseHelper(t, r)...)
+					errs = append(errs, verifyResourcesTraverseHelper(t, r, pathVars, key)...)
 				default:
-					errs = append(errs, fmt.Errorf("Resource key %v does contain an object for a value", k))
+					errs = append(errs, fmt.Errorf("Resource key %v does not contain an object for a value", k))
 				}
 			}
-		default:
-			continue
 		}
 	}
 	return errs
 }
 
-// TODO: possibility of overflow with int64 -> float64
-func interfaceToFloat(obj interface{}) (float64, error) {
-	switch i := obj.(type) {
-	case float64:
-		return i, nil
-	case float32:
-		return float64(i), nil
-	case int64:
-		return float64(i), nil
-	case int32:
-		return float64(i), nil
-	case int16:
-		return float64(i), nil
-	case int8:
-		return float64(i), nil
-	case int:
-		return float64(i), nil
-	case string:
-		return strconv.ParseFloat(i, 64)
+func applyRule(rule map[string]interface{}, key string, val interface{}, pathVars []string) []error {
+	errs := []error{}
+	switch rule["operation"] {
+	case "&":
+		var and AND
+		if err := mapstructure.Decode(rule, &and); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		if !(checkRule(and.Op1, val, pathVars) && checkRule(and.Op2, val, pathVars)) {
+			errs = append(errs, fmt.Errorf("Broken AND() rule at key %v", key))
+		}
+	case "|":
+		var or OR
+		if err := mapstructure.Decode(rule, &or); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		if !(checkRule(or.Op1, val, pathVars) || checkRule(or.Op2, val, pathVars)) {
+			errs = append(errs, fmt.Errorf("Broken OR() rule at key %v", key))
+		}
+	case "!":
+		var not NOT
+		if err := mapstructure.Decode(rule, &not); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		if checkRule(not.Op, val, pathVars) {
+			errs = append(errs, fmt.Errorf("Broken NOT() rule at key %v", key))
+		}
+	case "<":
+		var lt LT
+		if err := mapstructure.Decode(rule, &lt); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := val.(float64)
+		if resourceVal >= lt.Value {
+			errs = append(errs, fmt.Errorf("Broken LT() rule at key %v: %v >= %v", key, resourceVal, lt.Value))
+		}
+	case ">":
+		var gt GT
+		if err := mapstructure.Decode(rule, &gt); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := val.(float64)
+		if resourceVal <= gt.Value {
+			errs = append(errs, fmt.Errorf("Broken GT() rule at key %v: %v <= %v", key, resourceVal, gt.Value))
+		}
+	case "=":
+		var eq EQ
+		if err := mapstructure.Decode(rule, &eq); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := fmt.Sprintf("%v", val)
+		eqVal := fmt.Sprintf("%v", eq.Value)
+		if resourceVal != eqVal {
+			errs = append(errs, fmt.Errorf("Broken EQ() rule at key %v: %v != %v", key, resourceVal, eqVal))
+		}
+	case "tag":
+		var tag TAG
+		if err := mapstructure.Decode(rule, &tag); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := fmt.Sprintf("%v", val)
+		if val, ok := tagMap[tag.Tag]; ok {
+			if resourceVal != val {
+				errs = append(errs, fmt.Errorf("Broken TAG() rule at key %v: %v != %v", key, resourceVal, val))
+			}
+		} else {
+			tagMap[tag.Tag] = resourceVal
+		}
+	case "path":
+		var path PATH
+		if err := mapstructure.Decode(rule, &path); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := fmt.Sprintf("%v", val)
+		if path.Index > len(pathVars)-1 {
+			errs = append(errs, fmt.Errorf("PATH() index %v is out of bounds at key %v: %v", path.Index, key, strings.Join(pathVars, "/")))
+			return errs
+		}
+		val := pathVars[len(pathVars)-1-path.Index]
+		if resourceVal != val {
+			errs = append(errs, fmt.Errorf("Broken PATH() rule at key %v: %v != %v", key, resourceVal, val))
+		}
 	default:
-		return 0, fmt.Errorf("Cannot convert %v to float64", obj)
+		errs = append(errs, fmt.Errorf("Unknown gatekeeper operation encountered: %v", rule["operation"]))
+	}
+	return errs
+}
+
+func checkRule(gFunction map[string]interface{}, val interface{}, pathVars []string) bool {
+	switch gFunction["operation"] {
+	case "&":
+		var and AND
+		mapstructure.Decode(gFunction, &and)
+		return checkRule(and.Op1, val, pathVars) && checkRule(and.Op2, val, pathVars)
+	case "|":
+		var or OR
+		mapstructure.Decode(gFunction, &or)
+		return checkRule(or.Op1, val, pathVars) || checkRule(or.Op2, val, pathVars)
+	case "!":
+		var not NOT
+		mapstructure.Decode(gFunction, &not)
+		return !checkRule(not.Op, val, pathVars)
+	case ">":
+		var gt GT
+		mapstructure.Decode(gFunction, &gt)
+		val, _ := val.(float64)
+		return val > gt.Value
+	case "<":
+		var lt LT
+		mapstructure.Decode(gFunction, &lt)
+		val, _ := val.(float64)
+		return val < lt.Value
+	case "=":
+		var eq EQ
+		mapstructure.Decode(gFunction, &eq)
+		val := fmt.Sprintf("%v", val)
+		eqVal := fmt.Sprintf("%v", eq.Value)
+		return val == eqVal
+	case "tag":
+		var tag TAG
+		mapstructure.Decode(gFunction, &tag)
+		val := fmt.Sprintf("%v", val)
+		if tagVal, ok := tagMap[tag.Tag]; ok {
+			return val == tagVal
+		}
+		return true
+	case "path":
+		var path PATH
+		mapstructure.Decode(gFunction, &path)
+		if path.Index > len(pathVars)-1 {
+			return false
+		}
+		pathVal := pathVars[len(pathVars)-1-path.Index]
+		val := fmt.Sprintf("%v", val)
+		return val == pathVal
+	default:
+		return false
 	}
 }
 
@@ -211,9 +311,17 @@ func ParseRuleset(rulesetPath string) RuleSet {
 
 	// Run go-jsonnet on concatenated result of gatekeeper functions + ruleset
 	jsonnetResult := string(gatekeeperFunctions) + string(ruleSetContent)
-	jsonResult, err := exec.Command("jsonnet", "-e", jsonnetResult).Output()
+
+	// TODO: link with go-jsonnet instead of manually calling command
+	command := exec.Command("jsonnet", "-e", jsonnetResult)
+	var outB, errB bytes.Buffer
+	command.Stdout = &outB
+	command.Stderr = &errB
+	err = command.Run()
+	jsonResult := outB.Bytes()
+	jsonnetErr := errB.String()
 	if err != nil {
-		fmt.Println("Error when using go-jsonnet to parse jsonnet file: " + err.Error())
+		fmt.Println("Error when using go-jsonnet to parse jsonnet file: " + jsonnetErr)
 		os.Exit(1)
 	}
 

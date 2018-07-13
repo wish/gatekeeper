@@ -10,7 +10,7 @@
       "namespace": "service"
    },
    "spec": {
-      "replicas": 25,
+      "replicas": 24,
       "selector": {
          "matchLabels": {
             "app": "service"

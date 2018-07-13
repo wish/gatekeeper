@@ -20,3 +20,39 @@ local EQ(value="") = {
   value: value
 };
 
+// AND() checks if both op1 and op2 are satisfied
+local AND(op1, op2) = {
+  gatekeeper: true,
+  operation: "&",
+  op1: op1,
+  op2: op2,
+};
+
+// OR() checks if one of op1 or op2 is satisfied
+local OR(op1, op2) = {
+  gatekeeper: true,
+  operation: "|",
+  op1: op1,
+  op2: op2,
+};
+
+// NOT() checks if op is not satisfied
+local NOT(op) = {
+  gatekeeper: true,
+  operation: "!",
+  op: op,
+};
+
+// TAG() verifies that all TAG() with the same tag have the same value
+local TAG(tag) = {
+  gatekeeper: true,
+  operation: "tag",
+  tag: tag,
+};
+
+// PATH() checks if the selected field is equal to a component of the file path
+local PATH(index) = {
+  gatekeeper: true,
+  operation: "path",
+  index: index,
+};
