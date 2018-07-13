@@ -10,7 +10,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -63,8 +62,11 @@ func verifyFileWithRule(path string, rule Rule) []error {
 
 	resources, errs := parseFile(path)
 
+	//Parse path variables
+	pathVars := strings.Split(path, "/")
+
 	// Traverse the rules tree and verify file tree on each node
-	errs = append(errs, verifyResources(rule, resources, path)...)
+	errs = append(errs, verifyResources(rule, resources, pathVars)...)
 
 	return errs
 }
@@ -94,26 +96,40 @@ func parseFile(path string) ([]map[string]interface{}, []error) {
 }
 
 // Verifies a list of resources with a rule tree
-func verifyResources(rule Rule, resources []map[string]interface{}, path string) []error {
+func verifyResources(rule Rule, resources []map[string]interface{}, pathVars []string) []error {
 	errs := []error{}
 
 	for _, resource := range resources {
 		if _, ok := resource["kind"]; !ok {
-			errs = append(errs, fmt.Errorf("Resource in %v does not have 'kind' field", path))
+			errs = append(errs, fmt.Errorf("Resource in %v does not have 'kind' field", strings.Join(pathVars, "/")))
 			continue
 		}
+
 		if rule.Kind == resource["kind"] {
-			errs = append(errs, verifyResourcesTraverseHelper(rule.RuleTree, resource)...)
+			errs = append(errs, verifyResourcesTraverseHelper(rule.RuleTree, resource, pathVars)...)
 		}
 	}
 
 	return errs
 }
 
-func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}) []error {
+func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}, pathVars []string) []error {
 	errs := []error{}
 	for k, v := range ruleTree {
 		switch t := v.(type) {
+		case []interface{}:
+			for _, obj := range t {
+				switch o := obj.(type) {
+				case map[string]interface{}:
+					if _, ok := o["gatekeeper"]; ok {
+						errs = append(errs, applyRule(o, k, resourceTree[k], pathVars)...)
+					} else {
+						//TODO: arrays????
+					}
+				default:
+					//TODO: arrays???
+				}
+			}
 		case map[string]interface{}:
 			if _, ok := resourceTree[k]; !ok {
 				errs = append(errs, fmt.Errorf("Resource does not contain key %v", k))
@@ -121,95 +137,13 @@ func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree
 			}
 
 			if _, ok := t["gatekeeper"]; ok {
-				switch t["operation"] {
-				case "&":
-					var and AND
-					if err := mapstructure.Decode(t, &and); err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					if !(applyGatekeeperFunction(and.Op1, resourceTree[k]) && applyGatekeeperFunction(and.Op2, resourceTree[k])) {
-						errs = append(errs, fmt.Errorf("Broken AND() rule at key %v", k))
-					}
-				case "|":
-					var or OR
-					if err := mapstructure.Decode(t, &or); err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					if !(applyGatekeeperFunction(or.Op1, resourceTree[k]) || applyGatekeeperFunction(or.Op2, resourceTree[k])) {
-						errs = append(errs, fmt.Errorf("Broken OR() rule at key %v", k))
-					}
-				case "!":
-					var not NOT
-					if err := mapstructure.Decode(t, &not); err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					if applyGatekeeperFunction(not.Op, resourceTree[k]) {
-						errs = append(errs, fmt.Errorf("Broken NOT() rule at key %v", k))
-					}
-				case "<":
-					var lt LT
-					if err := mapstructure.Decode(t, &lt); err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					resourceVal, err := interfaceToFloat(resourceTree[k])
-					if err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					if resourceVal >= lt.Value {
-						errs = append(errs, fmt.Errorf("Broken LT() rule at key %v: %v >= %v", k, resourceVal, lt.Value))
-					}
-				case ">":
-					var gt GT
-					if err := mapstructure.Decode(t, &gt); err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					resourceVal, err := interfaceToFloat(resourceTree[k])
-					if err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					if resourceVal <= gt.Value {
-						errs = append(errs, fmt.Errorf("Broken GT() rule at key %v: %v <= %v", k, resourceVal, gt.Value))
-					}
-				case "=":
-					var eq EQ
-					if err := mapstructure.Decode(t, &eq); err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					resourceVal := fmt.Sprintf("%v", resourceTree[k])
-					if resourceVal != eq.Value {
-						errs = append(errs, fmt.Errorf("Broken EQ() rule at key %v: %v != %v", k, resourceVal, eq.Value))
-					}
-				case "tag":
-					var tag TAG
-					if err := mapstructure.Decode(t, &tag); err != nil {
-						errs = append(errs, err)
-						continue
-					}
-					resourceVal := fmt.Sprintf("%v", resourceTree[k])
-					if val, ok := tagMap[tag.Tag]; ok {
-						if resourceVal != val {
-							errs = append(errs, fmt.Errorf("Broken TAG() rule at key %v: %v != %v", k, resourceVal, val))
-						}
-					} else {
-						tagMap[tag.Tag] = resourceVal
-					}
-				default:
-					errs = append(errs, fmt.Errorf("Unknown gatekeeper operation encountered: %v", t["operation"]))
-				}
+				errs = append(errs, applyRule(t, k, resourceTree[k], pathVars)...)
 			} else {
 				switch r := resourceTree[k].(type) {
 				case map[string]interface{}:
-					errs = append(errs, verifyResourcesTraverseHelper(t, r)...)
+					errs = append(errs, verifyResourcesTraverseHelper(t, r, pathVars)...)
 				default:
-					errs = append(errs, fmt.Errorf("Resource key %v does contain an object for a value", k))
+					errs = append(errs, fmt.Errorf("Resource key %v does not contain an object for a value", k))
 				}
 			}
 		default:
@@ -219,61 +153,134 @@ func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree
 	return errs
 }
 
-func applyGatekeeperFunction(gFunction map[string]interface{}, val interface{}) bool {
+func applyRule(rule map[string]interface{}, key string, val interface{}, pathVars []string) []error {
+	errs := []error{}
+	switch rule["operation"] {
+	case "&":
+		var and AND
+		if err := mapstructure.Decode(rule, &and); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		if !(checkRule(and.Op1, val) && checkRule(and.Op2, val)) {
+			errs = append(errs, fmt.Errorf("Broken AND() rule at key %v", key))
+		}
+	case "|":
+		var or OR
+		if err := mapstructure.Decode(rule, &or); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		if !(checkRule(or.Op1, val) || checkRule(or.Op2, val)) {
+			errs = append(errs, fmt.Errorf("Broken OR() rule at key %v", key))
+		}
+	case "!":
+		var not NOT
+		if err := mapstructure.Decode(rule, &not); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		if checkRule(not.Op, val) {
+			errs = append(errs, fmt.Errorf("Broken NOT() rule at key %v", key))
+		}
+	case "<":
+		var lt LT
+		if err := mapstructure.Decode(rule, &lt); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := val.(float64)
+		if resourceVal >= lt.Value {
+			errs = append(errs, fmt.Errorf("Broken LT() rule at key %v: %v >= %v", key, resourceVal, lt.Value))
+		}
+	case ">":
+		var gt GT
+		if err := mapstructure.Decode(rule, &gt); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := val.(float64)
+		if resourceVal <= gt.Value {
+			errs = append(errs, fmt.Errorf("Broken GT() rule at key %v: %v <= %v", key, resourceVal, gt.Value))
+		}
+	case "=":
+		var eq EQ
+		if err := mapstructure.Decode(rule, &eq); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := fmt.Sprintf("%v", val)
+		eqVal := fmt.Sprintf("%v", eq.Value)
+		if resourceVal != eqVal {
+			errs = append(errs, fmt.Errorf("Broken EQ() rule at key %v: %v != %v", key, resourceVal, eqVal))
+		}
+	case "tag":
+		var tag TAG
+		if err := mapstructure.Decode(rule, &tag); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := fmt.Sprintf("%v", val)
+		if val, ok := tagMap[tag.Tag]; ok {
+			if resourceVal != val {
+				errs = append(errs, fmt.Errorf("Broken TAG() rule at key %v: %v != %v", key, resourceVal, val))
+			}
+		} else {
+			tagMap[tag.Tag] = resourceVal
+		}
+	case "path":
+		var path PATH
+		if err := mapstructure.Decode(rule, &path); err != nil {
+			errs = append(errs, err)
+			return errs
+		}
+		resourceVal := fmt.Sprintf("%v", val)
+		if path.Index > len(pathVars)-1 {
+			errs = append(errs, fmt.Errorf("PATH() index %v is out of bounds at key %v: %v", path.Index, key, strings.Join(pathVars, "/")))
+			return errs
+		}
+		val := pathVars[len(pathVars)-1-path.Index]
+		if resourceVal != val {
+			errs = append(errs, fmt.Errorf("Broken PATH() rule at key %v: %v != %v", key, resourceVal, val))
+		}
+	default:
+		errs = append(errs, fmt.Errorf("Unknown gatekeeper operation encountered: %v", rule["operation"]))
+	}
+	return errs
+}
+
+func checkRule(gFunction map[string]interface{}, val interface{}) bool {
 	switch gFunction["operation"] {
 	case "&":
 		var and AND
 		mapstructure.Decode(gFunction, &and)
-		return applyGatekeeperFunction(and.Op1, val) && applyGatekeeperFunction(and.Op2, val)
+		return checkRule(and.Op1, val) && checkRule(and.Op2, val)
 	case "|":
 		var or OR
 		mapstructure.Decode(gFunction, &or)
-		return applyGatekeeperFunction(or.Op1, val) || applyGatekeeperFunction(or.Op2, val)
+		return checkRule(or.Op1, val) || checkRule(or.Op2, val)
 	case "!":
 		var not NOT
 		mapstructure.Decode(gFunction, &not)
-		return !applyGatekeeperFunction(not.Op, val)
+		return !checkRule(not.Op, val)
 	case ">":
 		var gt GT
 		mapstructure.Decode(gFunction, &gt)
-		val, _ := interfaceToFloat(val)
+		val, _ := val.(float64)
 		return val > gt.Value
 	case "<":
 		var lt LT
 		mapstructure.Decode(gFunction, &lt)
-		val, _ := interfaceToFloat(val)
+		val, _ := val.(float64)
 		return val < lt.Value
 	case "=":
 		var eq EQ
 		mapstructure.Decode(gFunction, &eq)
 		val := fmt.Sprintf("%v", val)
-		return val == eq.Value
+		eqVal := fmt.Sprintf("%v", eq.Value)
+		return val == eqVal
 	default:
 		return false
-	}
-}
-
-// TODO: possibility of overflow with int64 -> float64
-func interfaceToFloat(obj interface{}) (float64, error) {
-	switch i := obj.(type) {
-	case float64:
-		return i, nil
-	case float32:
-		return float64(i), nil
-	case int64:
-		return float64(i), nil
-	case int32:
-		return float64(i), nil
-	case int16:
-		return float64(i), nil
-	case int8:
-		return float64(i), nil
-	case int:
-		return float64(i), nil
-	case string:
-		return strconv.ParseFloat(i, 64)
-	default:
-		return 0, fmt.Errorf("Cannot convert %v to float64", obj)
 	}
 }
 

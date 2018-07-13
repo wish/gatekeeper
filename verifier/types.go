@@ -30,7 +30,7 @@ type GT struct {
 type EQ struct {
 	Gatekeeper bool
 	Operation  string
-	Value      string
+	Value      interface{}
 }
 
 // AND describes a AND() function
@@ -61,4 +61,11 @@ type TAG struct {
 	Gatekeeper bool
 	Operation  string
 	Tag        string
+}
+
+// PATH describes a PATH() function
+type PATH struct {
+	Gatekeeper bool
+	Operation  string
+	Index      int
 }

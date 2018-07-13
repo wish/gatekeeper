@@ -5,7 +5,7 @@
       kind: "Deployment",
       ruleTree: {
         spec: {
-          replicas: GT(0)
+          replicas: AND(LT(2), GT(25))
         },
       },
     },
@@ -15,7 +15,10 @@
       ruleTree: {
         metadata: {
           labels: {
-            name: TAG("namespace")
+            name: [
+              TAG("namespace"),
+              PATH(1)
+            ]
           },
           name: TAG("namespace")
         },

@@ -49,3 +49,10 @@ local TAG(tag) = {
   operation: "tag",
   tag: tag,
 };
+
+// PATH() checks if the selected field is equal to a component of the file path
+local PATH(index) = {
+  gatekeeper: true,
+  operation: "path",
+  index: index,
+};
