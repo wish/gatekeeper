@@ -1,5 +1,7 @@
 package verifier
 
+// TODO: Use emebedded structs
+
 // RuleSet is a set of Rules
 type RuleSet struct {
 	Rules []Rule

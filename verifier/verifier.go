@@ -106,48 +106,40 @@ func verifyResources(rule Rule, resources []map[string]interface{}, pathVars []s
 		}
 
 		if rule.Kind == resource["kind"] {
-			errs = append(errs, verifyResourcesTraverseHelper(rule.RuleTree, resource, pathVars)...)
+			errs = append(errs, verifyResourcesTraverseHelper(rule.RuleTree, resource, pathVars, "")...)
 		}
 	}
 
 	return errs
 }
 
-func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}, pathVars []string) []error {
+func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}, pathVars []string, parentKey string) []error {
 	errs := []error{}
 	for k, v := range ruleTree {
+		// Check resource tree has key
+		if _, ok := resourceTree[k]; !ok {
+			errs = append(errs, fmt.Errorf("Resource does not contain key %v", k))
+			continue
+		}
+		key := k
+		if parentKey != "" {
+			key = parentKey + "." + k
+		}
+
 		switch t := v.(type) {
 		case []interface{}:
-			for _, obj := range t {
-				switch o := obj.(type) {
-				case map[string]interface{}:
-					if _, ok := o["gatekeeper"]; ok {
-						errs = append(errs, applyRule(o, k, resourceTree[k], pathVars)...)
-					} else {
-						//TODO: arrays????
-					}
-				default:
-					//TODO: arrays???
-				}
-			}
+			// TODO: arrays???
 		case map[string]interface{}:
-			if _, ok := resourceTree[k]; !ok {
-				errs = append(errs, fmt.Errorf("Resource does not contain key %v", k))
-				continue
-			}
-
 			if _, ok := t["gatekeeper"]; ok {
-				errs = append(errs, applyRule(t, k, resourceTree[k], pathVars)...)
+				errs = append(errs, applyRule(t, key, resourceTree[k], pathVars)...)
 			} else {
 				switch r := resourceTree[k].(type) {
 				case map[string]interface{}:
-					errs = append(errs, verifyResourcesTraverseHelper(t, r, pathVars)...)
+					errs = append(errs, verifyResourcesTraverseHelper(t, r, pathVars, key)...)
 				default:
 					errs = append(errs, fmt.Errorf("Resource key %v does not contain an object for a value", k))
 				}
 			}
-		default:
-			continue
 		}
 	}
 	return errs
@@ -162,7 +154,7 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			errs = append(errs, err)
 			return errs
 		}
-		if !(checkRule(and.Op1, val) && checkRule(and.Op2, val)) {
+		if !(checkRule(and.Op1, val, pathVars) && checkRule(and.Op2, val, pathVars)) {
 			errs = append(errs, fmt.Errorf("Broken AND() rule at key %v", key))
 		}
 	case "|":
@@ -171,7 +163,7 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			errs = append(errs, err)
 			return errs
 		}
-		if !(checkRule(or.Op1, val) || checkRule(or.Op2, val)) {
+		if !(checkRule(or.Op1, val, pathVars) || checkRule(or.Op2, val, pathVars)) {
 			errs = append(errs, fmt.Errorf("Broken OR() rule at key %v", key))
 		}
 	case "!":
@@ -180,7 +172,7 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			errs = append(errs, err)
 			return errs
 		}
-		if checkRule(not.Op, val) {
+		if checkRule(not.Op, val, pathVars) {
 			errs = append(errs, fmt.Errorf("Broken NOT() rule at key %v", key))
 		}
 	case "<":
@@ -249,20 +241,20 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 	return errs
 }
 
-func checkRule(gFunction map[string]interface{}, val interface{}) bool {
+func checkRule(gFunction map[string]interface{}, val interface{}, pathVars []string) bool {
 	switch gFunction["operation"] {
 	case "&":
 		var and AND
 		mapstructure.Decode(gFunction, &and)
-		return checkRule(and.Op1, val) && checkRule(and.Op2, val)
+		return checkRule(and.Op1, val, pathVars) && checkRule(and.Op2, val, pathVars)
 	case "|":
 		var or OR
 		mapstructure.Decode(gFunction, &or)
-		return checkRule(or.Op1, val) || checkRule(or.Op2, val)
+		return checkRule(or.Op1, val, pathVars) || checkRule(or.Op2, val, pathVars)
 	case "!":
 		var not NOT
 		mapstructure.Decode(gFunction, &not)
-		return !checkRule(not.Op, val)
+		return !checkRule(not.Op, val, pathVars)
 	case ">":
 		var gt GT
 		mapstructure.Decode(gFunction, &gt)
@@ -279,6 +271,23 @@ func checkRule(gFunction map[string]interface{}, val interface{}) bool {
 		val := fmt.Sprintf("%v", val)
 		eqVal := fmt.Sprintf("%v", eq.Value)
 		return val == eqVal
+	case "tag":
+		var tag TAG
+		mapstructure.Decode(gFunction, &tag)
+		val := fmt.Sprintf("%v", val)
+		if tagVal, ok := tagMap[tag.Tag]; ok {
+			return val == tagVal
+		}
+		return true
+	case "path":
+		var path PATH
+		mapstructure.Decode(gFunction, &path)
+		if path.Index > len(pathVars)-1 {
+			return false
+		}
+		pathVal := pathVars[len(pathVars)-1-path.Index]
+		val := fmt.Sprintf("%v", val)
+		return val == pathVal
 	default:
 		return false
 	}
@@ -303,6 +312,7 @@ func ParseRuleset(rulesetPath string) RuleSet {
 	// Run go-jsonnet on concatenated result of gatekeeper functions + ruleset
 	jsonnetResult := string(gatekeeperFunctions) + string(ruleSetContent)
 
+	// TODO: link with go-jsonnet instead of manually calling command
 	command := exec.Command("jsonnet", "-e", jsonnetResult)
 	var outB, errB bytes.Buffer
 	command.Stdout = &outB
