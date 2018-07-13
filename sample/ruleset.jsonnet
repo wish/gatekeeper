@@ -9,5 +9,17 @@
         },
       },
     },
+    {
+      regex: ".*namespace.json",
+      kind: "Namespace",
+      ruleTree: {
+        metadata: {
+          labels: {
+            name: TAG("namespace")
+          },
+          name: TAG("namespace")
+        },
+      },
+    },
   ]
 }

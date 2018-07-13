@@ -19,9 +19,12 @@ import (
 	"github.com/wish/gatekeeper/parser"
 )
 
+var tagMap map[string]string
+
 // Verify verifies the given folder of Kubernetes files, then returns the errors encountered
 func Verify(ruleSet RuleSet, base string) []error {
 	errs := []error{}
+	tagMap = make(map[string]string)
 
 	err := filepath.Walk(base, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -183,6 +186,20 @@ func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree
 					resourceVal := fmt.Sprintf("%v", resourceTree[k])
 					if resourceVal != eq.Value {
 						errs = append(errs, fmt.Errorf("Broken EQ() rule at key %v: %v != %v", k, resourceVal, eq.Value))
+					}
+				case "tag":
+					var tag TAG
+					if err := mapstructure.Decode(t, &tag); err != nil {
+						errs = append(errs, err)
+						continue
+					}
+					resourceVal := fmt.Sprintf("%v", resourceTree[k])
+					if val, ok := tagMap[tag.Tag]; ok {
+						if resourceVal != val {
+							errs = append(errs, fmt.Errorf("Broken TAG() rule at key %v: %v != %v", k, resourceVal, val))
+						}
+					} else {
+						tagMap[tag.Tag] = resourceVal
 					}
 				default:
 					errs = append(errs, fmt.Errorf("Unknown gatekeeper operation encountered: %v", t["operation"]))

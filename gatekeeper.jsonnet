@@ -42,3 +42,10 @@ local NOT(op) = {
   operation: "!",
   op: op,
 };
+
+// TAG() verifies that all TAG() with the same tag have the same value
+local TAG(tag) = {
+  gatekeeper: true,
+  operation: "tag",
+  tag: tag,
+};

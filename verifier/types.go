@@ -55,3 +55,10 @@ type NOT struct {
 	Operation  string
 	Op         map[string]interface{}
 }
+
+// TAG describes a TAG() function
+type TAG struct {
+	Gatekeeper bool
+	Operation  string
+	Tag        string
+}
