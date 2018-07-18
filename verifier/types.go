@@ -11,6 +11,7 @@ type RuleSet struct {
 type Rule struct {
 	Regex    string
 	Kind     string
+	Type     string
 	RuleTree map[string]interface{}
 }
 
