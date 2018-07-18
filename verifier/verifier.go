@@ -105,15 +105,29 @@ func verifyResources(rule Rule, resources []map[string]interface{}, pathVars []s
 			continue
 		}
 
+		if rule.Kind == resource["kind"] && rule.Type == "deny" && len(rule.RuleTree) == 0 {
+			errs = append(errs, fmt.Errorf("Kind %v not allowed", rule.Kind))
+			continue
+		}
+
 		if rule.Kind == resource["kind"] {
-			errs = append(errs, verifyResourcesTraverseHelper(rule.RuleTree, resource, pathVars, "")...)
+			var allow bool
+			if rule.Type == "allow" {
+				allow = true
+			} else if rule.Type == "deny" {
+				allow = false
+			} else {
+				errs = append(errs, fmt.Errorf("Invalid type field in rule (must be allow or deny): %v", rule.Type))
+				return errs
+			}
+			errs = append(errs, verifyResourcesTraverseHelper(rule.RuleTree, resource, pathVars, "", allow)...)
 		}
 	}
 
 	return errs
 }
 
-func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}, pathVars []string, parentKey string) []error {
+func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}, pathVars []string, parentKey string, allow bool) []error {
 	errs := []error{}
 	for k, v := range ruleTree {
 		// Check resource tree has key
@@ -131,11 +145,11 @@ func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree
 			// TODO: arrays???
 		case map[string]interface{}:
 			if _, ok := t["gatekeeper"]; ok {
-				errs = append(errs, applyRule(t, key, resourceTree[k], pathVars)...)
+				errs = append(errs, applyRule(t, key, resourceTree[k], pathVars, allow)...)
 			} else {
 				switch r := resourceTree[k].(type) {
 				case map[string]interface{}:
-					errs = append(errs, verifyResourcesTraverseHelper(t, r, pathVars, key)...)
+					errs = append(errs, verifyResourcesTraverseHelper(t, r, pathVars, key, allow)...)
 				default:
 					errs = append(errs, fmt.Errorf("Resource key %v does not contain an object for a value", k))
 				}
@@ -145,7 +159,7 @@ func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree
 	return errs
 }
 
-func applyRule(rule map[string]interface{}, key string, val interface{}, pathVars []string) []error {
+func applyRule(rule map[string]interface{}, key string, val interface{}, pathVars []string, allow bool) []error {
 	errs := []error{}
 	switch rule["operation"] {
 	case "&":
@@ -154,8 +168,11 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			errs = append(errs, err)
 			return errs
 		}
-		if !(checkRule(and.Op1, val, pathVars) && checkRule(and.Op2, val, pathVars)) {
-			errs = append(errs, fmt.Errorf("Broken AND() rule at key %v", key))
+		rulePassed := checkRule(and.Op1, val, pathVars) && checkRule(and.Op2, val, pathVars)
+		if !rulePassed && allow {
+			errs = append(errs, fmt.Errorf("Broken AND() rule at key %v in allow rule", key))
+		} else if rulePassed && !allow {
+			errs = append(errs, fmt.Errorf("Broken AND() rule at key %v in deny rule", key))
 		}
 	case "|":
 		var or OR
@@ -163,8 +180,11 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			errs = append(errs, err)
 			return errs
 		}
-		if !(checkRule(or.Op1, val, pathVars) || checkRule(or.Op2, val, pathVars)) {
-			errs = append(errs, fmt.Errorf("Broken OR() rule at key %v", key))
+		rulePassed := checkRule(or.Op1, val, pathVars) || checkRule(or.Op2, val, pathVars)
+		if !rulePassed && allow {
+			errs = append(errs, fmt.Errorf("Broken OR() rule at key %v in allow rule", key))
+		} else if rulePassed && !allow {
+			errs = append(errs, fmt.Errorf("Broken OR() rule at key %v in deny rule", key))
 		}
 	case "!":
 		var not NOT
@@ -172,8 +192,11 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			errs = append(errs, err)
 			return errs
 		}
-		if checkRule(not.Op, val, pathVars) {
-			errs = append(errs, fmt.Errorf("Broken NOT() rule at key %v", key))
+		rulePassed := !checkRule(not.Op, val, pathVars)
+		if !rulePassed && allow {
+			errs = append(errs, fmt.Errorf("Broken NOT() rule at key %v in allow rule", key))
+		} else if rulePassed && !allow {
+			errs = append(errs, fmt.Errorf("Broken NOT() rule at key %v in deny rule", key))
 		}
 	case "<":
 		var lt LT
@@ -182,8 +205,11 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			return errs
 		}
 		resourceVal := val.(float64)
-		if resourceVal >= lt.Value {
-			errs = append(errs, fmt.Errorf("Broken LT() rule at key %v: %v >= %v", key, resourceVal, lt.Value))
+		rulePassed := resourceVal < lt.Value
+		if !rulePassed && allow {
+			errs = append(errs, fmt.Errorf("Broken LT() rule at key %v in allow rule: %v >= %v", key, resourceVal, lt.Value))
+		} else if rulePassed && !allow {
+			errs = append(errs, fmt.Errorf("Broken LT() rule at key %v in deny rule: %v < %v", key, resourceVal, lt.Value))
 		}
 	case ">":
 		var gt GT
@@ -192,8 +218,11 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			return errs
 		}
 		resourceVal := val.(float64)
-		if resourceVal <= gt.Value {
-			errs = append(errs, fmt.Errorf("Broken GT() rule at key %v: %v <= %v", key, resourceVal, gt.Value))
+		rulePassed := resourceVal > gt.Value
+		if !rulePassed && allow {
+			errs = append(errs, fmt.Errorf("Broken GT() rule at key %v in allow rule: %v <= %v", key, resourceVal, gt.Value))
+		} else if rulePassed && !allow {
+			errs = append(errs, fmt.Errorf("Broken GT() rule at key %v in deny rule: %v > %v", key, resourceVal, gt.Value))
 		}
 	case "=":
 		var eq EQ
@@ -203,8 +232,11 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 		}
 		resourceVal := fmt.Sprintf("%v", val)
 		eqVal := fmt.Sprintf("%v", eq.Value)
-		if resourceVal != eqVal {
-			errs = append(errs, fmt.Errorf("Broken EQ() rule at key %v: %v != %v", key, resourceVal, eqVal))
+		rulePassed := resourceVal == eqVal
+		if !rulePassed && allow {
+			errs = append(errs, fmt.Errorf("Broken EQ() rule at key %v in allow rule: %v != %v", key, resourceVal, eqVal))
+		} else if rulePassed && !allow {
+			errs = append(errs, fmt.Errorf("Broken EQ() rule at key %v in deny rule: %v == %v", key, resourceVal, eqVal))
 		}
 	case "tag":
 		var tag TAG
@@ -214,8 +246,11 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 		}
 		resourceVal := fmt.Sprintf("%v", val)
 		if val, ok := tagMap[tag.Tag]; ok {
-			if resourceVal != val {
-				errs = append(errs, fmt.Errorf("Broken TAG() rule at key %v: %v != %v", key, resourceVal, val))
+			rulePassed := resourceVal == val
+			if !rulePassed && allow {
+				errs = append(errs, fmt.Errorf("Broken TAG() rule at key %v in allow rule: %v != %v", key, resourceVal, val))
+			} else if rulePassed && !allow {
+				errs = append(errs, fmt.Errorf("Broken TAG() rule at key %v in deny rule: %v == %v", key, resourceVal, val))
 			}
 		} else {
 			tagMap[tag.Tag] = resourceVal
@@ -232,8 +267,11 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 			return errs
 		}
 		val := pathVars[len(pathVars)-1-path.Index]
-		if resourceVal != val {
-			errs = append(errs, fmt.Errorf("Broken PATH() rule at key %v: %v != %v", key, resourceVal, val))
+		rulePassed := resourceVal == val
+		if !rulePassed && allow {
+			errs = append(errs, fmt.Errorf("Broken PATH() rule at key %v in allow rule: %v != %v", key, resourceVal, val))
+		} else if rulePassed && !allow {
+			errs = append(errs, fmt.Errorf("Broken PATH() rule at key %v in deny rule: %v == %v", key, resourceVal, val))
 		}
 	default:
 		errs = append(errs, fmt.Errorf("Unknown gatekeeper operation encountered: %v", rule["operation"]))
