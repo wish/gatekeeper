@@ -1,0 +1,86 @@
+{
+  "rules": [
+    {
+      "regex": "sample.json",
+      "kind": "Deployment",
+      "type": "deny",
+      "ruleTree": {
+        "spec": {
+          "replicas": {
+            "gatekeeper": true,
+            "operation": "&",
+            "op1": {
+              "gatekeeper": true,
+              "operation": ">",
+              "value": 2
+            },
+            "op2": {
+              "gatekeeper": true,
+              "operation": "<",
+              "value": 25
+            }
+          }   
+        }
+      }
+    },
+    {
+      "regex": "sample.json",
+      "kind": "Deployment",
+      "type": "allow",
+      "ruleTree": {
+        "spec": {
+          "replicas": {
+            "gatekeeper": true,
+            "operation": "&",
+            "op1": {
+              "gatekeeper": true,
+              "operation": ">",
+              "value": 2
+            },
+            "op2": {
+              "gatekeeper": true,
+              "operation": "<",
+              "value": 25
+            }
+          }   
+        }
+      }
+    },
+    {
+      "regex": ".*namespace.json",
+      "kind": "Namespace",
+      "type": "allow",
+      "ruleTree": {
+        "metadata": {
+          "labels": {
+            "name": {
+              "gatekeeper": true,
+              "operation": "&",
+              "op1": {
+                "gatekeeper": true,
+                "operation": "tag",
+                "tag": "namespace"
+              },
+              "op2": {
+                "gatekeeper": true,
+                "operation": "path",
+                "index": 1
+              }
+            }   
+          },
+          "name": {
+            "gatekeeper": true,
+            "operation": "tag",
+            "tag": "namespace"
+          }
+        }
+      }
+    },
+    {
+      "regex": ".*.json",
+      "kind": "RoleBinding",
+      "type": "deny",
+      "ruleTree": {}
+    }
+  ]
+}

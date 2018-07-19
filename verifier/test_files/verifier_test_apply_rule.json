@@ -1,0 +1,521 @@
+[
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "&",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      1
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "&",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      2
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": ["Broken AND() rule at key key in allow rule"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "&",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      1
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": ["Broken AND() rule at key key in deny rule"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "&",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      2
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "|",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      3
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "|",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      2
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": ["Broken OR() rule at key key in allow rule"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "|",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      3
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": ["Broken OR() rule at key key in deny rule"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "|",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      2
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "!",
+      "op": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "!",
+      "op": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": ["Broken NOT() rule at key key in allow rule"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "!",
+      "op": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": ["Broken NOT() rule at key key in deny rule"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "!",
+      "op": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      }
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  ">",
+      "value":      1
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  ">",
+      "value":      4
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": ["Broken GT() rule at key key in allow rule: 2 <= 4"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  ">",
+      "value":      1
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": ["Broken GT() rule at key key in deny rule: 2 > 1"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  ">",
+      "value":      4
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "<",
+      "value":      4
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "<",
+      "value":      1
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": ["Broken LT() rule at key key in allow rule: 2 >= 1"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "<",
+      "value":      4
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": ["Broken LT() rule at key key in deny rule: 2 < 4"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "<",
+      "value":      1
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "=",
+      "value":      2
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "=",
+      "value":      1
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": true,
+    "result": ["Broken EQ() rule at key key in allow rule: 2 != 1"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "=",
+      "value":      2
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": ["Broken EQ() rule at key key in deny rule: 2 == 2"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "=",
+      "value":      1
+    },
+    "key": "key",
+    "val": 2,
+    "pathVars": [],
+    "allow": false,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "tag",
+      "tag":      "non_existent_tag"
+    },
+    "key": "key",
+    "val": "value",
+    "pathVars": [],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "tag",
+      "tag":      "valid_tag"
+    },
+    "key": "key",
+    "val": "service",
+    "pathVars": [],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "tag",
+      "tag":      "valid_tag"
+    },
+    "key": "key",
+    "val": "incorrect",
+    "pathVars": [],
+    "allow": true,
+    "result": ["Broken TAG() rule at key key in allow rule: incorrect != service"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "tag",
+      "tag":      "valid_tag"
+    },
+    "key": "key",
+    "val": "service",
+    "pathVars": [],
+    "allow": false,
+    "result": ["Broken TAG() rule at key key in deny rule: service == service"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "tag",
+      "tag":      "valid_tag"
+    },
+    "key": "key",
+    "val": "incorrect",
+    "pathVars": [],
+    "allow": false,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      0
+    },
+    "key": "key",
+    "val": "file",
+    "pathVars": ["folder", "file"],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      1
+    },
+    "key": "key",
+    "val": "folder",
+    "pathVars": ["folder", "file"],
+    "allow": true,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      1
+    },
+    "key": "key",
+    "val": "asdf",
+    "pathVars": ["folder", "file"],
+    "allow": true,
+    "result": ["Broken PATH() rule at key key in allow rule: asdf != folder"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      1
+    },
+    "key": "key",
+    "val": "folder",
+    "pathVars": ["folder", "file"],
+    "allow": false,
+    "result": ["Broken PATH() rule at key key in deny rule: folder == folder"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      1
+    },
+    "key": "key",
+    "val": "asdf",
+    "pathVars": ["folder", "file"],
+    "allow": false,
+    "result": []
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      3
+    },
+    "key": "key",
+    "val": "folder",
+    "pathVars": ["folder", "file"],
+    "allow": true,
+    "result": ["PATH() index 3 is out of bounds at key key: folder/file"]
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "asdf"
+    },
+    "key": "key",
+    "val": "",
+    "pathVars": [],
+    "allow": true,
+    "result": ["Unknown gatekeeper operation encountered: asdf"]
+  }
+]

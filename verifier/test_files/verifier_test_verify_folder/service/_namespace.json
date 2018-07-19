@@ -1,0 +1,21 @@
+---
+{
+   "apiVersion": "v1",
+   "kind": "Namespace",
+   "metadata": {
+      "labels": {
+         "name": "service"
+      },
+      "name": "service"
+   }
+}
+---
+{
+   "apiVersion": "v1",
+   "kind": "Secret",
+   "metadata": {
+      "name": "containerA-key",
+      "namespace": "service"
+   },
+   "type": "Opaque"
+}
