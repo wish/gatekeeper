@@ -57,6 +57,7 @@ func Verify(ruleSet RuleSet, base string) []error {
 	return errs
 }
 
+// Verifies a file with a rule
 func verifyFileWithRule(path string, rule Rule) []error {
 	errs := []error{}
 
@@ -71,6 +72,7 @@ func verifyFileWithRule(path string, rule Rule) []error {
 	return errs
 }
 
+// Parses a Kubernetes configuration file into a map[string]interface
 func parseFile(path string) ([]map[string]interface{}, []error) {
 	tree := make([]map[string]interface{}, 0)
 	errs := []error{}
@@ -95,7 +97,7 @@ func parseFile(path string) ([]map[string]interface{}, []error) {
 	return tree, errs
 }
 
-// Verifies a list of resources with a rule tree
+// Verifies a list of resources with a rule
 func verifyResources(rule Rule, resources []map[string]interface{}, pathVars []string) []error {
 	errs := []error{}
 
@@ -127,6 +129,7 @@ func verifyResources(rule Rule, resources []map[string]interface{}, pathVars []s
 	return errs
 }
 
+// Traverses rule tree to properly apply rules
 func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree map[string]interface{}, pathVars []string, parentKey string, allow bool) []error {
 	errs := []error{}
 	for k, v := range ruleTree {
@@ -159,6 +162,7 @@ func verifyResourcesTraverseHelper(ruleTree map[string]interface{}, resourceTree
 	return errs
 }
 
+// Applies a rule to a key/value pair, returns list of errors encountered
 func applyRule(rule map[string]interface{}, key string, val interface{}, pathVars []string, allow bool) []error {
 	errs := []error{}
 	switch rule["operation"] {
@@ -279,6 +283,7 @@ func applyRule(rule map[string]interface{}, key string, val interface{}, pathVar
 	return errs
 }
 
+// Checks if gatekeeper function is satisfied, returns boolean result of check
 func checkRule(gFunction map[string]interface{}, val interface{}, pathVars []string) bool {
 	switch gFunction["operation"] {
 	case "&":

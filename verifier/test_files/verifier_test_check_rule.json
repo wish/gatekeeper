@@ -1,0 +1,245 @@
+[
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "&",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      1
+      }
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "&",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      2
+      }
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "|",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      3
+      }
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "|",
+      "op1": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "op2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      2
+      }
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "!",
+      "op": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      }
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "!",
+      "op": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      }
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  ">",
+      "value":      1
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  ">",
+      "value":      4
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "<",
+      "value":      4
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "<",
+      "value":      1
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "=",
+      "value":      2
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "=",
+      "value":      1
+    },
+    "val": 2,
+    "pathVars": [],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "tag",
+      "tag":      "non_existent_tag"
+    },
+    "val": "value",
+    "pathVars": [],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "tag",
+      "tag":      "valid_tag"
+    },
+    "val": "service",
+    "pathVars": [],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "tag",
+      "tag":      "valid_tag"
+    },
+    "val": "incorrect",
+    "pathVars": [],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      0
+    },
+    "val": "file",
+    "pathVars": ["folder", "file"],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      1
+    },
+    "val": "folder",
+    "pathVars": ["folder", "file"],
+    "result": true
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      1
+    },
+    "val": "asdf",
+    "pathVars": ["folder", "file"],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "path",
+      "index":      3
+    },
+    "val": "folder",
+    "pathVars": ["folder", "file"],
+    "result": false
+  },
+  {
+    "rule": {
+      "gatekeeper": true,
+      "operation":  "asdf"
+    },
+    "val": "",
+    "pathVars": [],
+    "result": false
+  }
+]
