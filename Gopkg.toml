@@ -18,3 +18,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
+
+[[constraint]]
+  name = "github.com/google/go-jsonnet"
+  version = "0.11.2"

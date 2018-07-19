@@ -1,17 +1,16 @@
 package verifier
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	jsonnet "github.com/google/go-jsonnet"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 
@@ -354,22 +353,14 @@ func ParseRuleset(rulesetPath string) RuleSet {
 
 	// Run go-jsonnet on concatenated result of gatekeeper functions + ruleset
 	jsonnetResult := string(gatekeeperFunctions) + string(ruleSetContent)
-
-	// TODO: link with go-jsonnet instead of manually calling command
-	command := exec.Command("jsonnet", "-e", jsonnetResult)
-	var outB, errB bytes.Buffer
-	command.Stdout = &outB
-	command.Stderr = &errB
-	err = command.Run()
-	jsonResult := outB.Bytes()
-	jsonnetErr := errB.String()
+	vm := jsonnet.MakeVM()
+	jsonResult, err := vm.EvaluateSnippet("<cmdline>", jsonnetResult)
 	if err != nil {
-		fmt.Println("Error when using go-jsonnet to parse jsonnet file: " + jsonnetErr)
-		os.Exit(1)
+		fmt.Println("Error using go-jsonnet to parse ruleset: " + err.Error())
 	}
 
 	var ruleSet RuleSet
-	err = json.Unmarshal(jsonResult, &ruleSet)
+	err = json.Unmarshal([]byte(jsonResult), &ruleSet)
 	if err != nil {
 		fmt.Println("Error unmarshalling ruleset json: " + err.Error())
 		os.Exit(1)
