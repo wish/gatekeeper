@@ -29,6 +29,16 @@
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
+  name = "github.com/google/go-jsonnet"
+  packages = [
+    ".",
+    "ast",
+    "parser"
+  ]
+  revision = "6144c57d2a054b72ff46219f655bf863b940e174"
+  version = "v0.11.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/google/gofuzz"
   packages = ["."]
@@ -263,6 +273,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "05f7145b051bb8567ec3bef4b9fa422f4c70a0c4b8676a211e299a642fe51b2f"
+  inputs-digest = "775ec33d3d4e6d845089809a6653adec36ed2974a3f2bba72bf850616e2d2deb"
   solver-name = "gps-cdcl"
   solver-version = 1
