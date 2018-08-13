@@ -18,11 +18,13 @@ import (
 )
 
 var tagMap map[string]string
+var resourceNameMap map[string]string
 
 // Verify verifies the given folder of Kubernetes files, then returns the errors encountered
 func Verify(ruleSet RuleSet, base string) []error {
 	errs := []error{}
 	tagMap = make(map[string]string)
+	resourceNameMap = make(map[string]string)
 
 	err := filepath.Walk(base, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -38,6 +40,10 @@ func Verify(ruleSet RuleSet, base string) []error {
 			return nil
 		}
 
+		// Verify structural defaults
+		errs = append(errs, verifyStructure(path)...)
+
+		// Verify rules
 		for _, rule := range ruleSet.Rules {
 			reg, err := regexp.Compile(rule.Regex)
 			if err != nil {
@@ -101,11 +107,14 @@ func verifyResources(rule Rule, resources []map[string]interface{}, pathVars []s
 	errs := []error{}
 
 	for _, resource := range resources {
+
+		// Check kind exists
 		if _, ok := resource["kind"]; !ok {
 			errs = append(errs, fmt.Errorf("Resource in %v does not have 'kind' field", strings.Join(pathVars, "/")))
 			continue
 		}
 
+		// Verify any deny rules for this resource kind
 		if rule.Kind == resource["kind"] && rule.Type == "deny" && len(rule.RuleTree) == 0 {
 			errs = append(errs, fmt.Errorf("Kind %v not allowed", rule.Kind))
 			continue
@@ -333,6 +342,51 @@ func checkRule(gFunction map[string]interface{}, val interface{}, pathVars []str
 	default:
 		return false
 	}
+}
+
+// verifyStructure verifies structural rules
+func verifyStructure(path string) []error {
+	errs := []error{}
+
+	//Parse path variables
+	pathVars := strings.Split(path, "/")
+	resources, errs := parseFile(path)
+	for _, resource := range resources {
+		// Check metadata exists
+		if _, ok := resource["metadata"]; !ok {
+			errs = append(errs, fmt.Errorf("Resource in %v does not have 'metadata' field", strings.Join(pathVars, "/")))
+			continue
+		}
+
+		// Verify metadata is object
+		switch md := resource["metadata"].(type) {
+		case map[string]interface{}:
+			// Check metadata.name exists
+			if _, ok := md["name"]; !ok {
+				errs = append(errs, fmt.Errorf("Resource in %v does not have 'metadata.name' field", strings.Join(pathVars, "/")))
+				continue
+			}
+
+			// Check metadata.name and namespace are unique
+			resourceName := fmt.Sprintf("%v", md["name"])
+			resourceNamespace := "default"
+			if _, ok := md["namespace"]; ok {
+				resourceNamespace = fmt.Sprintf("%v", md["namespace"])
+			}
+
+			if _, ok := resourceNameMap[resourceName]; ok && resourceNameMap[resourceName] == resourceNamespace {
+				errs = append(errs, fmt.Errorf("Duplicate resource in %v with namespace '%v' and name '%v'", strings.Join(pathVars, "/"), resourceNamespace, resourceName))
+				continue
+			} else {
+				resourceNameMap[resourceName] = resourceNamespace
+			}
+
+		default:
+			errs = append(errs, fmt.Errorf("Resource in %v has an invalid 'metadata' field type", strings.Join(pathVars, "/")))
+			continue
+		}
+	}
+	return errs
 }
 
 // ParseRuleset parses the ruleset file and returns a RuleSet object
