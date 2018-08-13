@@ -1,6 +1,7 @@
 # Gatekeeper
 
 [![Build Status](https://travis-ci.org/wish/gatekeeper.svg?branch=master)](https://travis-ci.org/wish/gatekeeper)
+[![Docker Repository on Quay](https://quay.io/repository/wish/gatekeeper/status "Docker Repository on Quay")](https://quay.io/repository/wish/gatekeeper)
 
 `gatekeeper` is a tool for verifying Kubernetes configuration files against custom rules defined in a Jsonnet ruleset. It will return a list of errors it encounters while verifying the files.
 
