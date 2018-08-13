@@ -120,3 +120,21 @@
       "namespace": "service"
    }
 }
+---
+{
+   "apiVersion": "v1",
+   "kind": "ConfigMap",
+   "metadata": {
+      "name": "service-containerB-config",
+      "namespace": "service"
+   }
+}
+---
+{
+   "apiVersion": "v1",
+   "kind": "ConfigMap",
+   "metadata": {
+      "name": "service-containerA-config",
+      "namespace": "service"
+   }
+}

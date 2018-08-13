@@ -38,12 +38,18 @@ func TestVerify(t *testing.T) {
 		t.Errorf("Cannot read test file %v", parseRulesetTestFile)
 	}
 	err = json.Unmarshal(ruleSetRaw, &ruleSet)
-	expected := []string{"Broken AND() rule at key spec.replicas in deny rule"}
+	expected := map[string]bool{
+		"Broken AND() rule at key spec.replicas in deny rule":                                                                                            false,
+		"Duplicate resource in test_files/verifier_test_verify_folder/service/sample.json with namespace 'service' and name 'service-containerB-config'": false,
+	}
 	result := Verify(ruleSet, verifyTestFolder)
 	for _, err := range result {
 		found := false
-		for _, errString := range expected {
+		for errString, encountered := range expected {
 			if err.Error() == errString {
+				if !encountered {
+					expected[errString] = true
+				}
 				found = true
 				break
 			}
@@ -51,6 +57,11 @@ func TestVerify(t *testing.T) {
 		if !found {
 			t.Errorf("Expected %v, got %v when verifying %v with ruleset %v", expected, result, verifyTestFolder, parseRulesetTestFile)
 			break
+		}
+	}
+	for errString, encountered := range expected {
+		if !encountered {
+			t.Errorf("Did not encounter expected error %v when verifying %v with ruleset %v", errString, verifyTestFolder, parseRulesetTestFile)
 		}
 	}
 
