@@ -18,7 +18,8 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -39,7 +40,23 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": ["Broken AND() rule at key key in allow rule"]
+    "result": ["Broken AND() rule: \n%v"],
+    "errDetails": [{
+      "path":  "",
+      "key":   "key",
+      "value": 2,
+      "operation_1":{
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "operation_2": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      2
+      },
+      "rule_type": "allow"
+    }]
   },
   {
     "rule": {
@@ -60,7 +77,23 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": ["Broken AND() rule at key key in deny rule"]
+    "result": ["Broken AND() rule: \n%v"],
+    "errDetails": [{
+      "path":  "",
+      "key":   "key",
+      "value": 2,
+      "operation_1":{
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "operation_2": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      1
+      },
+      "rule_type": "deny"
+    }]
   },
   {
     "rule": {
@@ -81,7 +114,8 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -102,7 +136,8 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -123,7 +158,23 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": ["Broken OR() rule at key key in allow rule"]
+    "result": ["Broken OR() rule: \n%v"],
+    "errDetails": [{
+      "path":  "",
+      "key":   "key",
+      "value": 2,
+      "operation_1":{
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "operation_2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      2
+      },
+      "rule_type": "allow"
+    }]
   },
   {
     "rule": {
@@ -144,7 +195,23 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": ["Broken OR() rule at key key in deny rule"]
+    "result": ["Broken OR() rule: \n%v"],
+    "errDetails": [{
+      "path":  "",
+      "key":   "key",
+      "value": 2,
+      "operation_1":{
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "operation_2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      3
+      },
+      "rule_type": "deny"
+    }]
   },
   {
     "rule": {
@@ -165,7 +232,8 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -181,7 +249,8 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -197,7 +266,18 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": ["Broken NOT() rule at key key in allow rule"]
+    "result": ["Broken NOT() rule: \n%v"],
+    "errDetails": [{
+			"path":      "",
+			"key":       "key",
+			"value":     2,
+			"operation": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      4
+      },
+      "rule_type": "allow"
+    }]
   },
   {
     "rule": {
@@ -213,7 +293,18 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": ["Broken NOT() rule at key key in deny rule"]
+    "result": ["Broken NOT() rule: \n%v"],
+    "errDetails": [{
+			"path":      "",
+			"key":       "key",
+			"value":     2,
+			"operation": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      4
+      },
+      "rule_type": "deny"
+    }]
   },
   {
     "rule": {
@@ -229,7 +320,8 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -241,7 +333,8 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -253,7 +346,14 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": ["Broken GT() rule at key key in allow rule: 2 <= 4"]
+    "result": ["Broken GT() rule: \n%v"],
+    "errDetails": [{
+			"path":     "",
+			"key":      "key",
+			"expected": 4,
+			"actual":   2,
+      "rule_type": "allow"
+    }]
   },
   {
     "rule": {
@@ -265,7 +365,14 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": ["Broken GT() rule at key key in deny rule: 2 > 1"]
+    "result": ["Broken GT() rule: \n%v"],
+    "errDetails": [{
+			"path":     "",
+			"key":      "key",
+			"expected": 1,
+			"actual":   2,
+      "rule_type": "deny"
+    }]
   },
   {
     "rule": {
@@ -277,7 +384,8 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -289,7 +397,8 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -301,7 +410,14 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": ["Broken LT() rule at key key in allow rule: 2 >= 1"]
+    "result": ["Broken LT() rule: \n%v"],
+    "errDetails": [{
+			"path":     "",
+			"key":      "key",
+			"expected": 1,
+			"actual":   2,
+      "rule_type": "allow"
+    }]
   },
   {
     "rule": {
@@ -313,7 +429,14 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": ["Broken LT() rule at key key in deny rule: 2 < 4"]
+    "result": ["Broken LT() rule: \n%v"],
+    "errDetails": [{
+			"path":     "",
+			"key":      "key",
+			"expected": 4,
+			"actual":   2,
+      "rule_type": "deny"
+    }]
   },
   {
     "rule": {
@@ -325,7 +448,8 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -337,7 +461,8 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -349,7 +474,14 @@
     "val": 2,
     "pathVars": [],
     "allow": true,
-    "result": ["Broken EQ() rule at key key in allow rule: 2 != 1"]
+    "result": ["Broken EQ() rule: \n%v"],
+    "errDetails": [{
+			"path":     "",
+			"key":      "key",
+			"expected": "1",
+			"actual":   "2",
+      "rule_type": "allow"
+    }]
   },
   {
     "rule": {
@@ -361,7 +493,14 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": ["Broken EQ() rule at key key in deny rule: 2 == 2"]
+    "result": ["Broken EQ() rule: \n%v"],
+    "errDetails": [{
+			"path":     "",
+			"key":      "key",
+			"expected": "2",
+			"actual":   "2",
+      "rule_type": "deny"
+    }]
   },
   {
     "rule": {
@@ -373,7 +512,8 @@
     "val": 2,
     "pathVars": [],
     "allow": false,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -385,7 +525,8 @@
     "val": "value",
     "pathVars": [],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -397,7 +538,8 @@
     "val": "service",
     "pathVars": [],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -409,7 +551,14 @@
     "val": "incorrect",
     "pathVars": [],
     "allow": true,
-    "result": ["Broken TAG() rule at key key in allow rule: incorrect != service"]
+    "result": ["Broken TAG() rule: \n%v"],
+    "errDetails": [{
+      "path":     "",
+      "key":      "key",
+      "expected": "service",
+      "actual":   "incorrect",
+      "rule_type": "allow"
+    }]
   },
   {
     "rule": {
@@ -421,7 +570,14 @@
     "val": "service",
     "pathVars": [],
     "allow": false,
-    "result": ["Broken TAG() rule at key key in deny rule: service == service"]
+    "result": ["Broken TAG() rule: \n%v"],
+    "errDetails": [{
+      "path":     "",
+      "key":      "key",
+      "expected": "service",
+      "actual":   "service",
+      "rule_type": "deny"
+    }]
   },
   {
     "rule": {
@@ -433,7 +589,8 @@
     "val": "incorrect",
     "pathVars": [],
     "allow": false,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -445,7 +602,8 @@
     "val": "file",
     "pathVars": ["folder", "file"],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -457,7 +615,8 @@
     "val": "folder",
     "pathVars": ["folder", "file"],
     "allow": true,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -469,7 +628,14 @@
     "val": "asdf",
     "pathVars": ["folder", "file"],
     "allow": true,
-    "result": ["Broken PATH() rule at key key in allow rule: asdf != folder"]
+    "result": ["Broken PATH() rule: \n%v"],
+    "errDetails": [{
+			"path":     "folder/file",
+			"key":      "key",
+			"expected": "folder",
+			"actual":   "asdf",
+      "rule_type": "allow"
+    }]
   },
   {
     "rule": {
@@ -481,7 +647,14 @@
     "val": "folder",
     "pathVars": ["folder", "file"],
     "allow": false,
-    "result": ["Broken PATH() rule at key key in deny rule: folder == folder"]
+    "result": ["Broken PATH() rule: \n%v"],
+    "errDetails": [{
+			"path":     "folder/file",
+			"key":      "key",
+			"expected": "folder",
+			"actual":   "folder",
+      "rule_type": "deny"
+    }]
   },
   {
     "rule": {
@@ -493,7 +666,8 @@
     "val": "asdf",
     "pathVars": ["folder", "file"],
     "allow": false,
-    "result": []
+    "result": [],
+    "errDetails": []
   },
   {
     "rule": {
@@ -505,7 +679,12 @@
     "val": "folder",
     "pathVars": ["folder", "file"],
     "allow": true,
-    "result": ["PATH() index 3 is out of bounds at key key: folder/file"]
+    "result": ["PATH() index is out of bounds: \n%v"],
+    "errDetails": [{
+      "path":  "folder/file",
+      "index": 3,
+      "key":   "key"
+    }]
   },
   {
     "rule": {
@@ -516,6 +695,7 @@
     "val": "",
     "pathVars": [],
     "allow": true,
-    "result": ["Unknown gatekeeper operation encountered: asdf"]
+    "result": ["Unknown gatekeeper operation encountered: asdf"],
+    "errDetails": []
   }
 ]
