@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -29,8 +30,8 @@ var rootCmd = &cobra.Command{
 
 			// Verify folder
 			if errs := verifier.Verify(ruleSet, args[0]); len(errs) > 0 {
-				for _, err := range errs {
-					fmt.Println(err)
+				for i, err := range errs {
+					fmt.Println(strconv.Itoa(i+1) + ". " + err.Error())
 				}
 				os.Exit(1)
 			}

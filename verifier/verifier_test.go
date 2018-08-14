@@ -2,8 +2,10 @@ package verifier
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"reflect"
+	"regexp"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -17,54 +19,80 @@ type CheckRuleArgObj struct {
 }
 
 type ApplyRuleArgObj struct {
-	Rule     map[string]interface{}
-	Key      string
-	Val      interface{}
-	PathVars []string
-	Allow    bool
-	Result   []string
+	Rule       map[string]interface{}
+	Key        string
+	Val        interface{}
+	PathVars   []string
+	Allow      bool
+	Result     []string
+	ErrDetails []map[string]interface{}
+	FullError  []string
+}
+
+type VerifyArgObj struct {
+	Result     []string
+	ErrDetails []map[string]interface{}
+	FullError  []string
 }
 
 var verifyTestFolder = "test_files/verifier_test_verify_folder/service"
+var verifyTestFile = "test_files/verifier_test_verify_rule.json"
 var checkRuleTestFile = "test_files/verifier_test_check_rule.json"
 var applyRuleTestFile = "test_files/verifier_test_apply_rule.json"
 var parseRulesetTestJsonnet = "test_files/verifier_test_parse_ruleset.jsonnet"
 var parseRulesetTestFile = "test_files/verifier_test_parse_ruleset.json"
 
 func TestVerify(t *testing.T) {
+	//Parse ruleset
 	var ruleSet RuleSet
 	ruleSetRaw, err := ioutil.ReadFile(parseRulesetTestFile)
 	if err != nil {
-		t.Errorf("Cannot read test file %v", parseRulesetTestFile)
+		t.Errorf("Cannot read ruleset file %v", parseRulesetTestFile)
+		return
 	}
 	err = json.Unmarshal(ruleSetRaw, &ruleSet)
-	expected := map[string]bool{
-		"Broken AND() rule at key spec.replicas in deny rule":                                                                                            false,
-		"Duplicate resource in test_files/verifier_test_verify_folder/service/sample.json with namespace 'service' and name 'service-containerB-config'": false,
+	if err != nil {
+		t.Errorf("Error when unmarshalling ruleset file %v: %v", parseRulesetTestFile, err)
+		return
 	}
+
+	//Parse expected results
+	var expectedResults VerifyArgObj
+	expectedResultsRaw, err := ioutil.ReadFile(verifyTestFile)
+	if err != nil {
+		t.Errorf("Cannot read test file %v", verifyTestFile)
+		return
+	}
+	err = json.Unmarshal(expectedResultsRaw, &expectedResults)
+	if err != nil {
+		t.Errorf("Error when unmarshalling test file %v: %v", verifyTestFile, err)
+		return
+	}
+
+	for i, errString := range expectedResults.Result {
+		errDetails, _ := json.MarshalIndent(expectedResults.ErrDetails[i], "", "	")
+		fullErrString := fmt.Sprintf(errString, string(errDetails))
+		expectedResults.FullError = append(expectedResults.FullError, fullErrString)
+	}
+
 	result := Verify(ruleSet, verifyTestFolder)
-	for _, err := range result {
-		found := false
-		for errString, encountered := range expected {
-			if err.Error() == errString {
-				if !encountered {
-					expected[errString] = true
+	if len(result) != len(expectedResults.FullError) {
+		t.Errorf("Expected \n%v\nbut got \n%v\nwhen verifying %v with ruleset %v", expectedResults.FullError, result, verifyTestFolder, parseRulesetTestFile)
+	} else {
+		for _, err := range result {
+			found := false
+			for _, fullErr := range expectedResults.FullError {
+				if regexp.MustCompile("/\\s/g").ReplaceAllString(err.Error(), "") == regexp.MustCompile("/\\s/g").ReplaceAllString(fullErr, "") {
+					found = true
+					break
 				}
-				found = true
+			}
+			if !found {
+				t.Errorf("Expected \n%v\nbut got \n%v\nwhen verifying %v with ruleset %v", expectedResults.FullError, result, verifyTestFolder, parseRulesetTestFile)
 				break
 			}
 		}
-		if !found {
-			t.Errorf("Expected %v, got %v when verifying %v with ruleset %v", expected, result, verifyTestFolder, parseRulesetTestFile)
-			break
-		}
 	}
-	for errString, encountered := range expected {
-		if !encountered {
-			t.Errorf("Did not encounter expected error %v when verifying %v with ruleset %v", errString, verifyTestFolder, parseRulesetTestFile)
-		}
-	}
-
 }
 
 func TestVerifyFileWithRule(t *testing.T) {
@@ -88,30 +116,48 @@ func TestApplyRule(t *testing.T) {
 	testCasesRaw, err := ioutil.ReadFile(applyRuleTestFile)
 	if err != nil {
 		t.Errorf("Cannot read test file %v", applyRuleTestFile)
+		return
 	}
 	err = json.Unmarshal(testCasesRaw, &testCases)
 	if err != nil {
-		t.Errorf("Error when unmarshalling test file %v", checkRuleTestFile)
+		t.Errorf("Error when unmarshalling test file %v: %v", applyRuleTestFile, err)
+		return
 	}
 
-	tagMap = map[string]string{
+	for c, testCase := range testCases {
+		for i, errString := range testCase.Result {
+			if i < len(testCase.ErrDetails) {
+				errDetails, err := json.MarshalIndent(testCase.ErrDetails[i], "", "	")
+				if err != nil {
+					t.Errorf("Error when marshalling error details in file %v: %v", applyRuleTestFile, err)
+					return
+				}
+				fullErrString := fmt.Sprintf(errString, string(errDetails))
+				testCases[c].FullError = append(testCases[c].FullError, fullErrString)
+			} else {
+				testCases[c].FullError = append(testCases[c].FullError, errString)
+			}
+		}
+	}
+
+	tagMap := map[string]string{
 		"valid_tag": "service",
 	}
 	for _, testCase := range testCases {
-		result := applyRule(testCase.Rule, testCase.Key, testCase.Val, testCase.PathVars, testCase.Allow)
+		result := applyRule(testCase.Rule, testCase.Key, testCase.Val, testCase.PathVars, tagMap, testCase.Allow)
 		if len(result) != len(testCase.Result) {
-			t.Errorf("Expected %v, got %v when running this test case: %v", testCase.Result, result, testCase)
+			t.Errorf("Expected \n%v\nbut got \n%v\nwhen running this test case: %v", testCase.FullError, result, testCase)
 		} else {
 			for _, err := range result {
 				found := false
-				for _, errString := range testCase.Result {
-					if err.Error() == errString {
+				for _, fullErr := range testCase.FullError {
+					if regexp.MustCompile("/\\s/g").ReplaceAllString(err.Error(), "") == regexp.MustCompile("/\\s/g").ReplaceAllString(fullErr, "") {
 						found = true
 						break
 					}
 				}
 				if !found {
-					t.Errorf("Expected %v, got %v when running this test case: %v", testCase.Result, result, testCase)
+					t.Errorf("Expected \n%v\nbut got \n%v\nwhen running this test case: %v", testCase.FullError, result, testCase)
 					break
 				}
 			}
@@ -124,19 +170,21 @@ func TestCheckRule(t *testing.T) {
 	testCasesRaw, err := ioutil.ReadFile(checkRuleTestFile)
 	if err != nil {
 		t.Errorf("Cannot read test file %v", checkRuleTestFile)
+		return
 	}
 	err = json.Unmarshal(testCasesRaw, &testCases)
 	if err != nil {
-		t.Errorf("Error when unmarshalling test file %v", checkRuleTestFile)
+		t.Errorf("Error when unmarshalling test file %v: %v", checkRuleTestFile, err)
+		return
 	}
 
-	tagMap = map[string]string{
+	tagMap := map[string]string{
 		"valid_tag": "service",
 	}
 	for _, testCase := range testCases {
-		result := checkRule(testCase.Rule, testCase.Val, testCase.PathVars)
+		result := checkRule(testCase.Rule, testCase.Val, testCase.PathVars, tagMap)
 		if result != testCase.Result {
-			t.Errorf("Expected %v, got %v when running this test case: %v", testCase.Result, result, testCase)
+			t.Errorf("Expected \n%v\nbut got \n%v\nwhen running this test case: %v", testCase.Result, result, testCase)
 		}
 	}
 
@@ -147,10 +195,12 @@ func TestParseRuleset(t *testing.T) {
 	expectedRaw, err := ioutil.ReadFile(parseRulesetTestFile)
 	if err != nil {
 		t.Errorf("Cannot read test file %v", parseRulesetTestFile)
+		return
 	}
 	err = json.Unmarshal(expectedRaw, &expected)
 	if err != nil {
-		t.Errorf("Error when unmarshalling test file %v", parseRulesetTestFile)
+		t.Errorf("Error when unmarshalling test file %v: %v", parseRulesetTestFile, err)
+		return
 	}
 	viper.BindEnv("gopath", "GOPATH")
 	result := ParseRuleset(parseRulesetTestJsonnet)

@@ -4,7 +4,8 @@ package verifier
 
 // RuleSet is a set of Rules
 type RuleSet struct {
-	Rules []Rule
+	Ignore []string
+	Rules  []Rule
 }
 
 // Rule describes a rule
@@ -13,6 +14,13 @@ type Rule struct {
 	Kind     string
 	Type     string
 	RuleTree map[string]interface{}
+}
+
+// ResourceIdentifier identifies a unique resources based on name, namespace, and kind
+type ResourceIdentifier struct {
+	Name      string
+	Namespace string
+	Kind      string
 }
 
 // LT describes a LT() function

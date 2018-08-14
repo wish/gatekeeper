@@ -1,9 +1,11 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"os"
+	"io/ioutil"
+	"strings"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,10 +42,12 @@ func ParseObjectsFromFile(path string) ([]runtime.Object, error) {
 	ret := []runtime.Object{}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
-	f, err := os.Open(path)
+	fileContentArr, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
+	fileContent := strings.TrimSuffix(strings.TrimSpace(string(fileContentArr)), "...")
+	f := NopReadCloser{bytes.NewBufferString(fileContent)}
 	defer f.Close()
 	d := yaml.NewDocumentDecoder(f)
 	out := []byte{}
@@ -65,4 +69,12 @@ func ParseObjectsFromFile(path string) ([]runtime.Object, error) {
 		}
 	}
 	return ret, nil
+}
+
+type NopReadCloser struct {
+	io.Reader
+}
+
+func (NopReadCloser) Close() error {
+	return nil
 }

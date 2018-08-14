@@ -1,0 +1,39 @@
+
+{
+  "result": [
+		"Broken AND() rule: \n%v",
+		"Duplicate resource with same namespace, name, and kind: \n%v"
+  ],
+  "errDetails": [
+    {
+      "path":  "test_files/verifier_test_verify_folder/service/sample.json",
+      "key":   "spec.replicas",
+      "value": 24,
+      "operation_1": {
+        "gatekeeper": true,
+        "operation":  ">",
+        "value":      2
+      },
+      "operation_2": {
+        "gatekeeper": true,
+        "operation":  "<",
+        "value":      25
+      },
+      "rule_type": "deny"
+    },
+    {
+      "path":                "test_files/verifier_test_verify_folder/service/sample.json",
+      "duplicate_name":      "service-containerB-config",
+      "duplicate_namespace": "service",
+      "duplicate_kind":      "ConfigMap",
+      "resource": {
+        "apiVersion": "v1",
+        "kind":       "ConfigMap",
+        "metadata": {
+          "name":      "service-containerB-config",
+          "namespace": "service"
+        }
+      }
+    }
+  ]
+}
