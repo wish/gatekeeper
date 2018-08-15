@@ -1,2 +1,2 @@
 default:
-	@GOOS=linux CGO_ENABLED=0 go build -o ${GOPATH}/bin/gatekeeper github.com/wish/gatekeeper
+	@GOOS=linux CGO_ENABLED=0 packr build -o ${GOPATH}/bin/gatekeeper github.com/wish/gatekeeper

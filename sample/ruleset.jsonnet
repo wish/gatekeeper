@@ -8,7 +8,7 @@
       ruleTree: {
         metadata: {
           labels: {
-            name: AND(TAG("namespace"), PATH())
+            name: AND(TAG("namespace"), PATH(1))
           },
           name: TAG("namespace")
         },
