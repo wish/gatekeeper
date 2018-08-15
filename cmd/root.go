@@ -5,8 +5,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/gobuffalo/packr"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/wish/gatekeeper/verifier"
 )
@@ -17,16 +17,18 @@ var rootCmd = &cobra.Command{
 	Use:   "gatekeeper",
 	Short: "Gatekeeper verifies your Kubernetes files against custom rulesets",
 	Long:  `Verify your Kubernetes files using custom rulesets.`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if !viper.IsSet("gopath") {
-			fmt.Println("Error: GOPATH is not set.")
-			os.Exit(1)
-		}
-	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
+			// Get gatekeeper function definitions
+			box := packr.NewBox("../function_definitions")
+			gatekeeperFunctions, err := box.MustString("gatekeeper.jsonnet")
+			if err != nil {
+				fmt.Println("Error: Could not get gatekeeper.jsonnet from packr.")
+				os.Exit(1)
+			}
+
 			// Parse ruleset
-			ruleSet := verifier.ParseRuleset(rulesetPath)
+			ruleSet := verifier.ParseRuleset(rulesetPath, gatekeeperFunctions)
 
 			// Verify folder
 			if errs := verifier.Verify(ruleSet, args[0]); len(errs) > 0 {
@@ -55,5 +57,4 @@ func init() {
 }
 
 func initConfig() {
-	viper.BindEnv("gopath", "GOPATH")
 }

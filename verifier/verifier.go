@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	jsonnet "github.com/google/go-jsonnet"
 	"github.com/mitchellh/mapstructure"
-	"github.com/spf13/viper"
 
 	"github.com/wish/gatekeeper/parser"
 )
@@ -517,14 +515,7 @@ func verifyStructure(path string) []error {
 }
 
 // ParseRuleset parses the ruleset file and returns a RuleSet object
-func ParseRuleset(rulesetPath string) RuleSet {
-	// Prepend gatekeeper functions to ruleset
-	gatekeeperFunctions, err := ioutil.ReadFile(path.Join(viper.GetString("gopath"), "src/github.com/wish/gatekeeper/gatekeeper.jsonnet"))
-	if err != nil {
-		fmt.Println("Error reading gatekeeper.jsonnet: " + err.Error())
-		os.Exit(1)
-	}
-
+func ParseRuleset(rulesetPath string, gatekeeperFunctions string) RuleSet {
 	// Read ruleset
 	ruleSetContent, err := ioutil.ReadFile(rulesetPath)
 	if err != nil {
@@ -533,7 +524,7 @@ func ParseRuleset(rulesetPath string) RuleSet {
 	}
 
 	// Run go-jsonnet on concatenated result of gatekeeper functions + ruleset
-	jsonnetResult := string(gatekeeperFunctions) + string(ruleSetContent)
+	jsonnetResult := gatekeeperFunctions + string(ruleSetContent)
 	vm := jsonnet.MakeVM()
 	jsonResult, err := vm.EvaluateSnippet("<cmdline>", jsonnetResult)
 	if err != nil {

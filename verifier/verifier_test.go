@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"regexp"
 	"testing"
 
-	"github.com/spf13/viper"
+	"github.com/gobuffalo/packr"
 )
 
 type CheckRuleArgObj struct {
@@ -202,8 +203,14 @@ func TestParseRuleset(t *testing.T) {
 		t.Errorf("Error when unmarshalling test file %v: %v", parseRulesetTestFile, err)
 		return
 	}
-	viper.BindEnv("gopath", "GOPATH")
-	result := ParseRuleset(parseRulesetTestJsonnet)
+	// Get gatekeeper function definitions
+	box := packr.NewBox("../function_definitions")
+	gatekeeperFunctions, err := box.MustString("gatekeeper.jsonnet")
+	if err != nil {
+		fmt.Println("Error: Could not get gatekeeper.jsonnet from packr.")
+		os.Exit(1)
+	}
+	result := ParseRuleset(parseRulesetTestJsonnet, gatekeeperFunctions)
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Expected %v, got %v when parsing test jsonnet: %v", expected, result, parseRulesetTestJsonnet)
 	}
