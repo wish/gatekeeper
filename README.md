@@ -49,11 +49,17 @@ Gatekeeper requires a jsonnet file that defines the rules you want to apply. The
 }
 ```
 
-The outer object must have a `rules` key that is an array of rule objects. Each rule object has 4 required keys. Gatekeeper will ignore any files with name matching those inside `ignore`.
+`ignore` contains filenames that gatekeeper will ignore.
+
+`rules` is an array of rule objects. Each rule object has 4 required keys. 
+
 
 `regex` matches the files that this rule will apply to. `gatekeeper` will check the regex on the filename of each file.
+
 `kind` matches the kind of resources that this rule will apply to.
+
 `type` can be either `allow` or `deny`. An allow rule will pass if no functions are broken. A deny rule will produce an error if any of the functions pass.
+
 `ruleTree` defines the actual content of the rule in a json object. It follows the same layout as the resource kind that it's applied to. You can use ruleset functions to check the values of specific fields in the resource. See the sample ruleset.jsonnet for examples.
 
 
