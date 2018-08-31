@@ -7,7 +7,14 @@
 
 ```
 $ gatekeeper -r sample/ruleset.jsonnet sample/service
-Broken AND() rule at key spec.replicas in deny rule
+1. Broken LT() rule: 
+{
+	"actual": 24,
+	"expected": 20,
+	"key": "spec.replicas",
+	"path": "sample/service/sample.json",
+	"rule_type": "allow"
+}
 ```
 
 
@@ -27,6 +34,7 @@ Gatekeeper requires a jsonnet file that defines the rules you want to apply. The
 
 ```
 {
+    ignore: ["somefile.yaml"],
     rules: [
         {
             regex: "file.json",
@@ -41,7 +49,7 @@ Gatekeeper requires a jsonnet file that defines the rules you want to apply. The
 }
 ```
 
-The outer object must have a `rules` key that is an array of rule objects. Each rule object has 4 required keys.
+The outer object must have a `rules` key that is an array of rule objects. Each rule object has 4 required keys. Gatekeeper will ignore any files with name matching those inside `ignore`.
 
 `regex` matches the files that this rule will apply to. `gatekeeper` will check the regex on the filename of each file.
 `kind` matches the kind of resources that this rule will apply to.
