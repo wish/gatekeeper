@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -51,11 +52,41 @@ func ParseObjectsFromFile(path string) ([]runtime.Object, error) {
 	defer f.Close()
 	d := yaml.NewDocumentDecoder(f)
 	out := []byte{}
+	prefix := []byte("---")
+
 	for {
 		b := make([]byte, 1)
 		_, err := d.Read(b)
 		out = append(out, b...)
 		if err == nil {
+			var jsonObj map[string]interface{}
+			if bytes.HasPrefix(out, prefix) {
+				err = json.Unmarshal(out[3:], &jsonObj)
+			} else {
+				err = json.Unmarshal(out, &jsonObj)
+			}
+			if err != nil {
+				return nil, err
+
+			}
+			if kind, ok := jsonObj["kind"]; ok {
+				kindStr := kind.(string)
+				if kindStr == "CustomResourceDefinition" {
+					// Should be able to pull in CRD and validate but I failed to get that working.
+					out = []byte{}
+					continue
+				}
+
+			}
+			if apiVersion, ok := jsonObj["apiVersion"]; ok {
+				apiVersionStr := apiVersion.(string)
+				if apiVersionStr == "custom.k8s.io/v1" {
+					// can't parse any crd instances so just ignore.
+					out = []byte{}
+					continue
+				}
+			}
+
 			obj, _, err := decode(out, nil, nil)
 			if err != nil {
 				return nil, err
