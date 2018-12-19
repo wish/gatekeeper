@@ -205,7 +205,7 @@ func TestParseRuleset(t *testing.T) {
 	}
 	// Get gatekeeper function definitions
 	box := packr.NewBox("../function_definitions")
-	gatekeeperFunctions, err := box.MustString("gatekeeper.jsonnet")
+	gatekeeperFunctions, err := box.FindString("gatekeeper.jsonnet")
 	if err != nil {
 		fmt.Println("Error: Could not get gatekeeper.jsonnet from packr.")
 		os.Exit(1)
