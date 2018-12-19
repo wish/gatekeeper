@@ -2,16 +2,34 @@
 
 
 [[projects]]
-  name = "github.com/fsnotify/fsnotify"
-  packages = ["."]
-  revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
-  version = "v1.4.7"
-
-[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/gobuffalo/envy"
+  packages = ["."]
+  revision = "801d7253ade1f895f74596b9a96147ed2d3b087e"
+  version = "v1.6.11"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gobuffalo/packd"
+  packages = ["."]
+  revision = "eca3b8fd66872a76119b189bbe0f58f776a2a39f"
+
+[[projects]]
+  name = "github.com/gobuffalo/packr"
+  packages = ["."]
+  revision = "679459352e18b4c74274a979d695fe13b68730c1"
+  version = "v1.21.9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gobuffalo/syncx"
+  packages = ["."]
+  revision = "558ac7de985fc4f4057bff27c7bdf99e92fe0750"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -45,27 +63,16 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/hcl"
-  packages = [
-    ".",
-    "hcl/ast",
-    "hcl/parser",
-    "hcl/printer",
-    "hcl/scanner",
-    "hcl/strconv",
-    "hcl/token",
-    "json/parser",
-    "json/scanner",
-    "json/token"
-  ]
-  revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
-
-[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
 
 [[projects]]
   name = "github.com/json-iterator/go"
@@ -73,10 +80,10 @@
   revision = "f2b4162afba35581b6d4a50d3b8f34e33c144682"
 
 [[projects]]
-  name = "github.com/magiconair/properties"
+  branch = "master"
+  name = "github.com/markbates/oncer"
   packages = ["."]
-  revision = "c2353362d570a7bfa228149c62842019201cfb71"
-  version = "v1.8.0"
+  revision = "bf2de49a0be218916e69a11d22866e6cd0a560f2"
 
 [[projects]]
   branch = "master"
@@ -97,25 +104,20 @@
   version = "1.0.0"
 
 [[projects]]
-  name = "github.com/pelletier/go-toml"
+  name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
-  version = "v1.2.0"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
-  name = "github.com/spf13/afero"
+  name = "github.com/rogpeppe/go-internal"
   packages = [
-    ".",
-    "mem"
+    "modfile",
+    "module",
+    "semver"
   ]
-  revision = "787d034dfe70e44075ccc060d346146ef53270ad"
-  version = "v1.1.1"
-
-[[projects]]
-  name = "github.com/spf13/cast"
-  packages = ["."]
-  revision = "8965335b8c7107321228e3e3702cab9832751bac"
-  version = "v1.2.0"
+  revision = "d87f08a7d80821c797ffc8eb8f4e01675f378736"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/spf13/cobra"
@@ -124,22 +126,10 @@
   version = "v0.0.3"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/spf13/jwalterweatherman"
-  packages = ["."]
-  revision = "7c0cea34c8ece3fbeb2b27ab9b59511d360fb394"
-
-[[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
   revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
   version = "v1.0.1"
-
-[[projects]]
-  name = "github.com/spf13/viper"
-  packages = ["."]
-  revision = "b5e8006cbee93ec955a89ab31e0e3ce3204f3736"
-  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
@@ -151,12 +141,6 @@
     "idna"
   ]
   revision = "e514e69ffb8bc3c76a71ae40de0118d794855992"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/sys"
-  packages = ["unix"]
-  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -273,6 +257,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "775ec33d3d4e6d845089809a6653adec36ed2974a3f2bba72bf850616e2d2deb"
+  inputs-digest = "115ac1b9ed27396ba9f006e92af2f7794d830f469bce142e4ca777c5d5bda08c"
   solver-name = "gps-cdcl"
   solver-version = 1

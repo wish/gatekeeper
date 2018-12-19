@@ -21,7 +21,7 @@ var rootCmd = &cobra.Command{
 		if len(args) == 1 {
 			// Get gatekeeper function definitions
 			box := packr.NewBox("../function_definitions")
-			gatekeeperFunctions, err := box.MustString("gatekeeper.jsonnet")
+			gatekeeperFunctions, err := box.FindString("gatekeeper.jsonnet")
 			if err != nil {
 				fmt.Println("Error: Could not get gatekeeper.jsonnet from packr.")
 				os.Exit(1)
