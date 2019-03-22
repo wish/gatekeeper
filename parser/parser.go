@@ -71,8 +71,8 @@ func ParseObjectsFromFile(path string) ([]runtime.Object, error) {
 			}
 			if kind, ok := jsonObj["kind"]; ok {
 				kindStr := kind.(string)
-				if kindStr == "CustomResourceDefinition" {
-					// Should be able to pull in CRD and validate but I failed to get that working.
+				if kindStr == "CustomResourceDefinition" || kindStr == "APIService" {
+					// Should be able to pull these in and validate but I failed to get that working.
 					out = []byte{}
 					continue
 				}
