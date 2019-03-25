@@ -6,9 +6,9 @@ RUN dep ensure
 RUN go get -u github.com/gobuffalo/packr/...
 RUN make
 
-FROM sparkprime/jsonnet as jsonnet
+FROM bitnami/jsonnet:0.12.1 as jsonnet
 
 FROM alpine:latest
-RUN apk add --no-cache make python git libstdc++ 
+RUN apk add --no-cache make python git libstdc++ gcompat
 COPY --from=gatekeeper /go/bin/gatekeeper /usr/local/bin
-COPY --from=jsonnet /usr/local/bin/jsonnet /usr/local/bin/jsonnet
+COPY --from=jsonnet /opt/bitnami/jsonnet/bin/jsonnet /usr/local/bin/jsonnet
